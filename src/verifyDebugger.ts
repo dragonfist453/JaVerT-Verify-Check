@@ -123,12 +123,15 @@ export class VerifierDebugger {
             true
         );
 
-        const data = fs.readFileSync(path.join(outPath, 'verif_results.json'), 'utf8');
-        const results = JSON.parse(data);
-        for (const result of results) {
-            this._verificationResults.set(result[0][0], result[1]);
-        }
-        this.updateVerificationDecoration(vscode.window.activeTextEditor);
+        // Dirty hack to wait for the verification to complete
+        setTimeout(() => {
+            const data = fs.readFileSync(path.join(outPath, 'verif_results.json'), 'utf8');
+            const results = JSON.parse(data);
+            for (const result of results) {
+                this._verificationResults.set(result[0][0], result[1]);
+            }
+            this.updateVerificationDecoration(vscode.window.activeTextEditor);
+        }, 2000);
         
         vscode.window.showInformationMessage('Verification complete.');
     }
