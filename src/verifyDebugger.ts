@@ -118,12 +118,15 @@ export class VerifierDebugger {
 
         this._verificationResults.clear();
 
+        // Hardcoded docker command to run the verification
+        // TODO: Make this configurable and more user-friendly
         terminal.sendText(
             `docker run -ti --rm -v ${dirPath}:/app/test-algorithms 677877e05b9b gillian-js verify /app/test-algorithms/${fileName} --result-dir=/app/test-algorithms/.gillian`,
             true
         );
 
         // Dirty hack to wait for the verification to complete
+        // TODO: Find a better way to do this
         setTimeout(() => {
             const data = fs.readFileSync(path.join(outPath, 'verif_results.json'), 'utf8');
             const results = JSON.parse(data);
