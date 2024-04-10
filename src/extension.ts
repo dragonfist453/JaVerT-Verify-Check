@@ -4,17 +4,12 @@ import { VerifierDebugger } from './verifyDebugger';
 export function activate(context: vscode.ExtensionContext) {
 	let verifyDebugger = new VerifierDebugger();
 
-	let verificationPassedDisposable = vscode.commands.registerCommand('javert-verify-check.verificationPassed', () => {
-		verifyDebugger.verificationPassed();
-	});
-
-	let verificationFailedDisposable = vscode.commands.registerCommand('javert-verify-check.verificationFailed', () => {
-		verifyDebugger.verificationFailed();
+	let doVerificationDisposable = vscode.commands.registerCommand('javert-verify-check.doVerification', () => {
+		verifyDebugger.doVerification();
 	});
 
 	context.subscriptions.push(
-		verificationPassedDisposable,
-		verificationFailedDisposable
+		doVerificationDisposable
 	);
 
 	let activeEditor = vscode.window.activeTextEditor;
@@ -26,9 +21,9 @@ export function activate(context: vscode.ExtensionContext) {
 			timeout = undefined;
 		}
 		if (throttle) {
-			timeout = setTimeout(() => verifyDebugger.reloadVerification(activeEditor), 500);
+			timeout = setTimeout(() => verifyDebugger.updateVerificationDecoration(activeEditor), 500);
 		} else {
-			verifyDebugger.reloadVerification(activeEditor);
+			verifyDebugger.updateVerificationDecoration(activeEditor);
 		}
 	}
 

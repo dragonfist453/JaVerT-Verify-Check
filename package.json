@@ -16,14 +16,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "javert-verify-check.verificationPassed",
-        "title": "Verification Passed",
-        "category": "JaVerT",
-        "when": "editorLangId == javascript"
-      },
-      {
-        "command": "javert-verify-check.verificationFailed",
-        "title": "Verification Failed",
+        "command": "javert-verify-check.doVerification",
+        "title": "Verify JaVerT specifications",
         "category": "JaVerT",
         "when": "editorLangId == javascript"
       }

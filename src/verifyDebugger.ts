@@ -3,18 +3,38 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 export class VerifierDebugger {
-    private _decorationType: vscode.TextEditorDecorationType | undefined;
+    private _decorationTypeMap: Map<boolean | undefined, vscode.TextEditorDecorationType> | undefined;
+    private _verificationResults: Map<string, boolean> = new Map();
 
     constructor() {
-        this._decorationType = vscode.window.createTextEditorDecorationType({
-            gutterIconPath: path.join(__dirname, '..', 'resources', 'history.svg'),
-            gutterIconSize: '85%',
-        });
+        this._decorationTypeMap = new Map([
+            [
+                undefined, 
+                vscode.window.createTextEditorDecorationType({
+                    gutterIconPath: path.join(__dirname, '..', 'resources', 'history.svg'),
+                    gutterIconSize: '85%',
+                })
+            ],
+            [
+                true, 
+                vscode.window.createTextEditorDecorationType({
+                    gutterIconPath: path.join(__dirname, '..', 'resources', 'pass.svg'),
+                    gutterIconSize: '85%',
+                })
+            ],
+            [
+                false, 
+                vscode.window.createTextEditorDecorationType({
+                    gutterIconPath: path.join(__dirname, '..', 'resources', 'error.svg'),
+                    gutterIconSize: '85%',
+                })
+            ],
+        ]);
     }
 
-    reloadVerification(editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor) {
+    updateVerificationDecoration(editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor) {
         // Clear previous decorations
-        editor?.setDecorations(this._decorationType!, []);
+        editor?.setDecorations(this._decorationTypeMap?.get(undefined)!, []);
 
         if (!editor) {
             return;
@@ -27,7 +47,13 @@ export class VerifierDebugger {
         // Regular expression to find @id annotations in JavaScript docstrings for functions
         const idPattern = /(\/\*\*[\s\S]*?@id\s*(\w+)?[\s\S]*?\*\/|\/\/\s*@id\s*(\w+)?)([\s\S]*?function\s+([a-zA-Z_$][0-9a-zA-Z_$]*)\s*\([^)]*\)\s*\{[^}]*\})/gm;
         let matches;
-        let decorations: vscode.DecorationOptions[] = [];
+        let decorations: Array<{
+            verificationResult: boolean | undefined, 
+            decorationProps: { 
+                decoration: vscode.TextEditorDecorationType, 
+                range: vscode.Range
+            }
+        }> = [];
 
         while ((matches = idPattern.exec(text)) !== null) {
             const id = matches[4]; // Capturing group 1 or 2 will contain the @id value
@@ -38,17 +64,40 @@ export class VerifierDebugger {
                 const endPos = new vscode.Position(line, text.split('\n')[line].length);
                 const range = new vscode.Range(startPos, endPos);
 
-                const decoration = { range };
-                decorations.push(decoration);
+                // Get the verification result for the current @id
+                const verificationResult = this._verificationResults.get(matches[2] || matches[3]);
+
+                // Set the decoration based on the verification result
+                const decorationProps = {
+                    decoration: this._decorationTypeMap?.get(verificationResult)!, 
+                    range: range
+                };
+                decorations.push({ verificationResult: verificationResult, decorationProps: decorationProps });
             }
         }
 
+        const decorationsToApply: Map<boolean | undefined, { 
+            decoration: vscode.TextEditorDecorationType, 
+            range: vscode.Range[]
+        }> = new Map();
+
+        // Group the decorations by verification result
+        decorations.forEach((d) => {
+            if (!decorationsToApply.has(d.verificationResult)) {
+                decorationsToApply.set(d.verificationResult, { decoration: d.decorationProps.decoration, range: [] });
+            }
+            decorationsToApply.get(d.verificationResult)?.range.push(d.decorationProps.range);
+        });
+
         // Apply the decorations to the editor
-        editor.setDecorations(this._decorationType!, decorations);
+        decorationsToApply.forEach((d) => {
+            editor.setDecorations(d.decoration, d.range);
+        });
     }
 
-    verificationPassed() {
+    doVerification() {
         if (!vscode.window.activeTextEditor) {
+            vscode.window.showErrorMessage('No file to verify.');
             return;
         }
 
@@ -67,14 +116,26 @@ export class VerifierDebugger {
             fs.mkdirSync(outPath);
         }
 
+        this._verificationResults.clear();
+
         terminal.sendText(
             `docker run -ti --rm -v ${dirPath}:/app/test-algorithms 677877e05b9b gillian-js verify /app/test-algorithms/${fileName} --result-dir=/app/test-algorithms/.gillian`,
             true
         );
+
+        const data = fs.readFileSync(path.join(outPath, 'verif_results.json'), 'utf8');
+        const results = JSON.parse(data);
+        for (const result of results) {
+            this._verificationResults.set(result[0][0], result[1]);
+        }
+        this.updateVerificationDecoration(vscode.window.activeTextEditor);
+        
         vscode.window.showInformationMessage('Verification complete.');
     }
 
-    verificationFailed() {
-        vscode.window.showErrorMessage('Verification failed.');
+    dispose() {
+        this._decorationTypeMap?.forEach((decoration) => {
+            decoration.dispose();
+        });
     }
 }
