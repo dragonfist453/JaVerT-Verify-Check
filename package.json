@@ -6,12 +6,13 @@
     "type": "git",
     "url": "https://github.com/dragonfist453/javert-verify-check"
   },
+  "markdown": "github",
   "author": {
     "name": "dragonfist453",
     "email": "ambu.karthik453@gmail.com"
   },
   "publisher": "dragonfist453",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "engines": {
     "vscode": "^1.88.0"
   },
@@ -33,7 +34,7 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run compile && docker build . -t gillian-verify",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",

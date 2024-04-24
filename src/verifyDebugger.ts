@@ -121,7 +121,7 @@ export class VerifierDebugger {
         // Hardcoded docker command to run the verification
         // TODO: Make this configurable and more user-friendly
         terminal.sendText(
-            `docker run -ti --rm -v ${dirPath}:/app/test-algorithms 677877e05b9b gillian-js verify /app/test-algorithms/${fileName} --result-dir=/app/test-algorithms/.gillian`,
+            `docker run -ti --rm -v ${dirPath}:/app/test-algorithms gillian-verify gillian-js verify /app/test-algorithms/${fileName} --result-dir=/app/test-algorithms/.gillian`,
             true
         );
 
