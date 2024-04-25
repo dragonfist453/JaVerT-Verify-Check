@@ -125,18 +125,26 @@ export class VerifierDebugger {
             true
         );
 
-        // Dirty hack to wait for the verification to complete
-        // TODO: Find a better way to do this
-        setTimeout(() => {
-            const data = fs.readFileSync(path.join(outPath, 'verif_results.json'), 'utf8');
-            const results = JSON.parse(data);
-            for (const result of results) {
-                this._verificationResults.set(result[0][0], result[1]);
+        // Watch verif_results.json for changes and update the decorations
+        const watcher = fs.watch(outPath, (event, filename) => {
+            if (event === 'change' || event === 'rename') {
+                setTimeout(() => {
+                    fs.readFile(path.join(outPath, 'verif_results.json'), 'utf8', (err, data) => {
+                        if (err) {
+                            vscode.window.showErrorMessage('Error reading verification results.');
+                            return;
+                        }
+                        const results = JSON.parse(data);
+                        for (const result of results) {
+                            this._verificationResults.set(result[0][0], result[1]);
+                        }
+                        this.updateVerificationDecoration(vscode.window.activeTextEditor);
+                        watcher.close();
+                        vscode.window.showInformationMessage('Verification complete.');
+                    });
+                }, 1000);
             }
-            this.updateVerificationDecoration(vscode.window.activeTextEditor);
-        }, 2000);
-        
-        vscode.window.showInformationMessage('Verification complete.');
+        });
     }
 
     dispose() {
