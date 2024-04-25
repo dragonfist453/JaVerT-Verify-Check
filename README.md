@@ -4,6 +4,10 @@
 
 This is an extension to verify javascript functions with specifications mentioned in JSIL using JaVerT (https://dl.acm.org/doi/abs/10.1145/3158138) syntax. The @id tag in the JSDoc of a javascript function with the name of the function helps the extension to work appropriately.
 
+## Prerequisites
+
+- Docker
+
 ## Installation
 
 There are a few steps for this extension to work except just install the extension:
@@ -47,6 +51,8 @@ There will be a javert-verify-check-1.0.0.vsix file in the directory generated a
 6. Restart VS Code as prompted by it
 
 ## Using the extension
+
+Example files for trying this extension are available at https://github.com/GillianPlatform/Gillian/tree/master/Gillian-JS/Examples/JaVerT. You can perform the actions mentioned here with the files.
 
 ### Verifying JaVerT Specifications
 
